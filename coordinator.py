@@ -1,31 +1,28 @@
-import argparse
-
 class Coordinator:
-    """Manages workers and aggregates results"""
-    
     def __init__(self, port: int):
-        print(f"Starting coordinator on port {port}")
-        self.workers = {}
-        self.results = {}
         self.port = port
-
-    def start(self) -> None:
-        """Start coordinator server"""
-        print(f"Starting coordinator on port {self.port}...")
-        pass
+        self.workers = {}
+        self.results = {"errors": 0, "total_requests": 0, "total_response_time": 0}
 
     async def distribute_work(self, filepath: str) -> None:
-        """Split file and assign chunks to workers"""
-        pass
+        chunk_size = 1024 * 1024  # 1 MB
+        file_size = os.path.getsize(filepath)
+        chunks = [(i, min(chunk_size, file_size - i)) for i in range(0, file_size, chunk_size)]
+
+        for worker_id, (start, size) in zip(self.workers.keys(), chunks):
+            worker = self.workers[worker_id]
+            results = await worker.process_chunk(filepath, start, size)
+            self.receive_results(worker_id, results)
 
     async def handle_worker_failure(self, worker_id: str) -> None:
-        """Reassign work from failed worker"""
-        pass
+        print(f"Worker {worker_id} has failed. Reassigning work.")
+        # Logic to redistribute work
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Log Analyzer Coordinator")
-    parser.add_argument("--port", type=int, default=8000, help="Coordinator port")
-    args = parser.parse_args()
+    def receive_results(self, worker_id: str, results: Dict) -> None:
+        self.results["errors"] += results["errors"]
+        self.results["total_requests"] += results["total_requests"]
+        self.results["total_response_time"] += results["total_response_time"]
 
-    coordinator = Coordinator(port=args.port)
-    coordinator.start()
+    def get_aggregated_results(self) -> Dict:
+        return self.results
+
