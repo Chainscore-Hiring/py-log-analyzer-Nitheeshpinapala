@@ -1,0 +1,7 @@
+The Distributed Log Analyzer system requires thorough testing to ensure its functionality, performance, and fault tolerance. 
+Functional testing includes verifying the correct parsing of log files, extracting metrics like response times and error rates, and ensuring proper work distribution among workers. 
+Additionally, real-time metric calculation must be tested to ensure accurate and continuous updates. 
+Failure handling is critical, with tests designed to simulate worker and coordinator failures and verify that work is reassigned and the system recovers without disruptions.
+Performance testing evaluates the system’s ability to process large log files efficiently, measuring the impact of increasing file sizes and worker counts on processing time and memory usage. 
+Edge cases like empty log files and malformed entries must also be handled gracefully, ensuring the system doesn't crash and provides appropriate error handling. 
+These test cases ensure that the system is both scalable and resilient, capable of handling diverse operational scenarios while maintaining high performance.
