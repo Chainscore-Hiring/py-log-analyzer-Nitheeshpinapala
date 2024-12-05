@@ -1,33 +1,40 @@
-import argparse
-
+import asyncio
+import re
+from datetime import datetime
+from typing import Dict
 
 class Worker:
-    """Processes log chunks and reports results"""
-    
     def __init__(self, port: int, worker_id: str, coordinator_url: str):
         self.worker_id = worker_id
         self.coordinator_url = coordinator_url
         self.port = port
     
-    def start(self) -> None:
-        """Start worker server"""
-        print(f"Starting worker {self.worker_id} on port {self.port}...")
-        pass
-
-    async def process_chunk(self, filepath: str, start: int, size: int) -> dict:
-        """Process a chunk of log file and return metrics"""
-        pass
+    async def process_chunk(self, filepath: str, start: int, size: int) -> Dict:
+        results = {"errors": 0, "total_requests": 0, "total_response_time": 0}
+        with open(filepath, "r") as file:
+            file.seek(start)
+            chunk = file.read(size)
+            lines = chunk.splitlines()
+            
+            for line in lines:
+                match = re.match(
+                    r"(?P<timestamp>\S+ \S+)\s(?P<level>\S+)\s(?P<message>.+?)(?:in (?P<response_time>\d+)ms)?",
+                    line,
+                )
+                if match:
+                    log_data = match.groupdict()
+                    timestamp = datetime.strptime(log_data["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+                    level = log_data["level"]
+                    if level == "ERROR":
+                        results["errors"] += 1
+                    elif level == "INFO" and log_data.get("response_time"):
+                        results["total_requests"] += 1
+                        results["total_response_time"] += int(log_data["response_time"])
+        
+        return results
 
     async def report_health(self) -> None:
-        """Send heartbeat to coordinator"""
-        pass
+        while True:
+            print(f"Worker {self.worker_id} is alive.")
+            await asyncio.sleep(10)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Log Analyzer Coordinator")
-    parser.add_argument("--port", type=int, default=8000, help="Coordinator port")
-    parser.add_argument("--id", type=str, default="worker1", help="Worker ID")
-    parser.add_argument("--coordinator", type=str, default="http://localhost:8000", help="Coordinator URL")
-    args = parser.parse_args()
-
-    worker = Worker(port=args.port, worker_id=args.id, coordinator_url=args.coordinator)
-    worker.start()
